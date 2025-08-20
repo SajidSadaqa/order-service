@@ -1,7 +1,7 @@
 package com.example.order.controller;
 
-import com.example.order.dto.CreateOrderRequest;
-import com.example.order.dto.OrderDto;
+import com.example.order.domain.request.CreateOrderRequest;
+import com.example.order.domain.response.OrderRes;
 import com.example.order.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,12 +19,12 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderDto createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    public OrderRes createOrder(@Valid @RequestBody CreateOrderRequest request) {
         return orderService.createOrder(request);
     }
 
     @GetMapping("/{id}")
-    public OrderDto getOrder(@PathVariable Long id) {
+    public OrderRes getOrder(@PathVariable Long id) {
         return orderService.getOrder(id);
     }
 }

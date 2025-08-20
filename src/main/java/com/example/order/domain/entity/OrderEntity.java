@@ -1,4 +1,4 @@
-package com.example.order.entity;
+package com.example.order.domain.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;

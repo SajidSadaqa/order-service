@@ -1,7 +1,8 @@
 package com.example.order.service;
 
-import com.example.order.dto.CreateOrderRequest;
-import com.example.order.dto.OrderDto;
+import com.example.order.domain.request.CreateOrderRequest;
+import com.example.order.domain.response.OrderRes;
+import com.example.order.domain.response.ProductRes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -75,7 +76,7 @@ class OrderServiceIntegrationTest {
         mockProductService.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody(objectMapper.writeValueAsString(
-                        new com.example.order.dto.ProductDto(1L, "Test Product", new BigDecimal("15.00"), 10)))
+                        new ProductRes(1L, "Test Product", new BigDecimal("15.00"), 10)))
                 .addHeader("Content-Type", "application/json"));
 
         mockProductService.enqueue(new MockResponse()
@@ -84,10 +85,10 @@ class OrderServiceIntegrationTest {
 
         CreateOrderRequest request = new CreateOrderRequest(1L, 3);
 
-        ResponseEntity<OrderDto> response = restTemplate.postForEntity(
+        ResponseEntity<OrderRes> response = restTemplate.postForEntity(
                 "http://localhost:" + port + "/api/orders",
                 request,
-                OrderDto.class
+                OrderRes.class
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -103,7 +104,7 @@ class OrderServiceIntegrationTest {
         mockProductService.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody(objectMapper.writeValueAsString(
-                        new com.example.order.dto.ProductDto(1L, "Test Product", new BigDecimal("15.00"), 2)))
+                        new ProductRes(1L, "Test Product", new BigDecimal("15.00"), 2)))
                 .addHeader("Content-Type", "application/json"));
 
         CreateOrderRequest request = new CreateOrderRequest(1L, 5);

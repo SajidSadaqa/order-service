@@ -1,11 +1,12 @@
 package com.example.order.service;
 
-import com.example.order.dto.CreateOrderRequest;
-import com.example.order.dto.OrderDto;
-import com.example.order.dto.ProductDto;
-import com.example.order.entity.OrderEntity;
+import com.example.order.domain.request.CreateOrderRequest;
+import com.example.order.domain.response.OrderRes;
+import com.example.order.domain.response.ProductRes;
+import com.example.order.domain.entity.OrderEntity;
 import com.example.order.repository.OrderRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -26,9 +27,9 @@ public class OrderService {
         this.productServiceClient = productServiceClient;
     }
 
-    public OrderDto createOrder(CreateOrderRequest request) {
+    public OrderRes createOrder(CreateOrderRequest request) {
         // Fetch product information
-        ProductDto product = fetchProduct(request.productId());
+        ProductRes product = fetchProduct(request.productId());
 
         // Check stock availability
         if (product.stock() < request.quantity()) {
@@ -47,13 +48,12 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderDto getOrder(Long id) {
+    public OrderRes getOrder(Long id) {
         OrderEntity order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
         return mapToDto(order);
     }
-
-    private ProductDto fetchProduct(Long productId) {
+    private ProductRes fetchProduct(Long productId) {
         try {
             return productServiceClient.get()
                     .uri("/api/products/{id}", productId)
@@ -69,7 +69,7 @@ public class OrderService {
                             (request, response) -> {
                                 throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Product service unavailable");
                             })
-                    .body(ProductDto.class);
+                    .body(ProductRes.class);
         } catch (RestClientException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Unable to connect to product service");
         }
@@ -80,14 +80,15 @@ public class OrderService {
             productServiceClient.patch()
                     .uri("/api/products/{id}/decrease-stock?qty={qty}", productId, quantity)
                     .retrieve()
-                    .onStatus(status -> status.is4xxClientError(),
+                    //2xx
+                    .onStatus(HttpStatusCode::is4xxClientError,
                             (request, response) -> {
                                 if (response.getStatusCode().value() == 409) {
                                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient stock");
                                 }
                                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product service error");
                             })
-                    .onStatus(status -> status.is5xxServerError(),
+                    .onStatus(HttpStatusCode::is5xxServerError,
                             (request, response) -> {
                                 throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Product service unavailable");
                             })
@@ -97,8 +98,8 @@ public class OrderService {
         }
     }
 
-    private OrderDto mapToDto(OrderEntity order) {
-        return new OrderDto(order.getId(), order.getProductId(),
+    private OrderRes mapToDto(OrderEntity order) {
+        return new OrderRes(order.getId(), order.getProductId(),
                 order.getQuantity(), order.getTotalPrice());
     }
 }
